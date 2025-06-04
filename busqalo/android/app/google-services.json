@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "545098312435",
+    "project_id": "busqalo-ede51",
+    "storage_bucket": "busqalo-ede51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:545098312435:android:c2103056b9f3a5858c6586",
+        "android_client_info": {
+          "package_name": "com.example.busqalo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "545098312435-7qp4fune6bl2catjtt49n1fblum02r4t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.busqalo",
+            "certificate_hash": "9545e1f8e732d9b7b50a2c16987248bd8e531361"
+          }
+        },
+        {
+          "client_id": "545098312435-rr3o2qmp820i9md21r9pdl4likf8vdtp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5jBvyGVT9V-ZbUKERBwPVCqd6iarHhvM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "545098312435-rr3o2qmp820i9md21r9pdl4likf8vdtp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
