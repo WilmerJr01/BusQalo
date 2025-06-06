@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:busqalo/utils/polilynes_routes.dart';
 import 'package:busqalo/utils/proximidad_rutas.dart';
+import 'package:busqalo/utils/registroDeActividad.dart';
 import 'package:busqalo/utils/show_routes.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'sliding_bar.dart';
 import 'package:flutter/material.dart';
@@ -42,10 +45,14 @@ class _HomeBodyState extends State<HomeBody> {
   Set<Polyline> _polylines = {};
   Map<String, Map<String, dynamic>> _infoRutas = {};
 
+  LocationData? currentLocation;
   String? _selectedPlaceName;
   double? _selectedLat;
   double? _selectedLng;
   Timer? _timer;
+  Set<Polyline> _todasLasRutas = {};
+  Map<String, Map<String, dynamic>> _todaLaInfoRutas = {};
+  Timer? _timerBuses;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -63,12 +70,15 @@ class _HomeBodyState extends State<HomeBody> {
   void initState() {
     super.initState();
     places = FlutterGooglePlacesSdk(widget.apiKey);
+    _getLocationAndMoveCamera();
     cargarPolylines();
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       cargarPolylines();
       print('Cargando rutas cada minuto...');
     });
-    _getLocationAndMoveCamera();
+    _timerBuses = Timer.periodic(const Duration(seconds: 1), (timer) {
+      cargarUbicacionesBuses();
+    });
   }
 
   Future<void> cargarPolylines() async {
@@ -76,14 +86,68 @@ class _HomeBodyState extends State<HomeBody> {
       final resultado = await cargarTodasLasRutasDesdeFirebaseYGoogle(
         apiKey: widget.apiKey,
       );
+      _todasLasRutas = resultado['polylines'] as Set<Polyline>;
+      _todaLaInfoRutas =
+          resultado['infoRutas'] as Map<String, Map<String, dynamic>>;
+
       setState(() {
-        _polylines = resultado['polylines'] as Set<Polyline>;
-        _infoRutas =
-            resultado['infoRutas'] as Map<String, Map<String, dynamic>>;
+        _polylines = _todasLasRutas;
+        _infoRutas = _todaLaInfoRutas;
       });
     } catch (e) {
       print('Error cargando rutas: $e');
     }
+  }
+
+  Future<void> cargarUbicacionesBuses() async {
+    final locationData = await _location.getLocation();
+    final LatLng userLatLng = LatLng(
+      locationData.latitude!,
+      locationData.longitude!,
+    );
+    final snapshot = await FirebaseFirestore.instance
+        .collection('emisiones')
+        .get();
+    final Set<Marker> busMarkers = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final emitiendo = data['emitiendo'] == true;
+      final ubicaciones = data['ubicaciones'] as List<dynamic>?;
+
+      if (emitiendo && ubicaciones != null && ubicaciones.isNotEmpty) {
+        final ultimaUbicacion = ubicaciones.last;
+        final lat = ultimaUbicacion['latitud'];
+        final lng = ultimaUbicacion['longitud'];
+        final ruta = ultimaUbicacion['ruta'] ?? 'Ruta desconocida';
+
+        final distancia = Geolocator.distanceBetween(
+          userLatLng.latitude,
+          userLatLng.longitude,
+          lat,
+          lng,
+        );
+
+        if (distancia <= 200) {
+          // Solo si está cerca (ajusta el radio si quieres)
+          busMarkers.add(
+            Marker(
+              markerId: MarkerId('bus_${doc.id}'),
+              position: LatLng(lat, lng),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueBlue,
+              ),
+              infoWindow: InfoWindow(title: 'Bus', snippet: 'Ruta: $ruta'),
+            ),
+          );
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _markers.removeWhere((m) => m.markerId.value.startsWith('bus_'));
+      _markers.addAll(busMarkers);
+    });
   }
 
   Future<void> restaurarRutasCercanasAlUsuario() async {
@@ -93,15 +157,7 @@ class _HomeBodyState extends State<HomeBody> {
       locationData.longitude!,
     );
 
-    final resultado = await cargarTodasLasRutasDesdeFirebaseYGoogle(
-      apiKey: widget.apiKey,
-    );
-    final Set<Polyline> todasLasPolylines =
-        resultado['polylines'] as Set<Polyline>;
-    final Map<String, Map<String, dynamic>> infoRutas =
-        resultado['infoRutas'] as Map<String, Map<String, dynamic>>;
-
-    final Set<Polyline> rutasCercanas = todasLasPolylines.where((poly) {
+    final Set<Polyline> rutasCercanas = _todasLasRutas.where((poly) {
       final puntos = poly.points;
       return rutaEstaCercaDelUsuario(puntos, userLatLng, radioMetros: 150);
     }).toSet();
@@ -113,7 +169,7 @@ class _HomeBodyState extends State<HomeBody> {
       _markers.clear();
       _polylines = rutasCercanas;
       _infoRutas = Map.fromEntries(
-        infoRutas.entries.where(
+        _todaLaInfoRutas.entries.where(
           (e) => rutasCercanas.any((p) => p.polylineId.value == e.key),
         ),
       );
@@ -121,22 +177,36 @@ class _HomeBodyState extends State<HomeBody> {
   }
 
   Future<void> _getLocationAndMoveCamera() async {
-    final hasPermission = await _location.hasPermission();
-    if (hasPermission == PermissionStatus.denied) {
-      await _location.requestPermission();
+    // Pedimos permisos
+    PermissionStatus permission = await _location.hasPermission();
+    if (permission == PermissionStatus.denied) {
+      permission = await _location.requestPermission();
+      if (permission != PermissionStatus.granted) return;
     }
 
-    final serviceEnabled = await _location.serviceEnabled();
+    // Activamos servicio
+    bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
-      await _location.requestService();
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) return;
     }
 
+    // Obtenemos ubicación
     final locationData = await _location.getLocation();
+    if (locationData.latitude == null || locationData.longitude == null) {
+      print("❌ Ubicación no válida.");
+      return;
+    }
 
-    setState(() {});
+    // Forzamos reconstrucción (opcional)
+    setState(() {
+      currentLocation = locationData;
+    });
 
+    // Esperamos a que el controlador esté listo
     final controller = await _controller.future;
 
+    // Movemos cámara
     controller.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
@@ -187,58 +257,70 @@ class _HomeBodyState extends State<HomeBody> {
     final lng = place.place?.latLng?.lng;
     final name = place.place?.name;
 
+    if (lat == null || lng == null) return;
+
     setState(() {
       _searchController.text = prediction.fullText;
       _suggestions = [];
       _selectedPlaceName = name;
       _selectedLat = lat;
       _selectedLng = lng;
-      _markers = {};
-      if (lat != null && lng != null) {
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('selected_place'),
-            position: LatLng(lat, lng),
-            infoWindow: InfoWindow(title: name),
-          ),
-        );
-      }
+      _markers = {
+        Marker(
+          markerId: const MarkerId('selected_place'),
+          position: LatLng(lat, lng),
+          infoWindow: InfoWindow(title: name),
+        ),
+      };
     });
 
-    // Minimiza el panel
     _slidingPanelKey.currentState?.minimizePanel();
 
-    if (lat != null && lng != null) {
-      // 1. Carga todas las rutas
-      final resultado = await cargarTodasLasRutasDesdeFirebaseYGoogle(
-        apiKey: widget.apiKey,
+    final LatLng destino = LatLng(lat, lng);
+
+    // 📍 Mi ubicación actual
+    final locationData = await _location.getLocation();
+    final LatLng miUbicacion = LatLng(
+      locationData.latitude!,
+      locationData.longitude!,
+    );
+
+    final rutas = _todasLasRutas;
+    final infoRutas = _todaLaInfoRutas;
+
+    // 🔍 1. Rutas que pasan cerca de mí
+    final rutasCercaDeMi = rutas.where((poly) {
+      return rutaEstaCercaDelUsuario(
+        poly.points,
+        miUbicacion,
+        radioMetros: 200,
       );
-      final Set<Polyline> todasLasPolylines =
-          resultado['polylines'] as Set<Polyline>;
-      final Map<String, Map<String, dynamic>> infoRutas =
-          resultado['infoRutas'] as Map<String, Map<String, dynamic>>;
+    }).toSet();
 
-      // 2. Filtra las rutas cercanas al destino
-      final LatLng destino = LatLng(lat, lng);
-      final Set<Polyline> rutasCercanas = todasLasPolylines.where((poly) {
-        final puntos = poly.points;
-        return rutaEstaCercaDelUsuario(puntos, destino, radioMetros: 150);
-      }).toSet();
+    // 🔍 2. Rutas que pasan cerca del destino
+    final rutasCercaDelDestino = rutas.where((poly) {
+      return rutaEstaCercaDelUsuario(poly.points, destino, radioMetros: 200);
+    }).toSet();
 
-      // 3. Actualiza el estado solo con las rutas cercanas
-      setState(() {
-        _polylines = rutasCercanas;
-        _infoRutas = Map.fromEntries(
-          infoRutas.entries.where(
-            (e) => rutasCercanas.any((p) => p.polylineId.value == e.key),
-          ),
-        );
-      });
+    // 🤝 3. Rutas que cumplen ambos criterios
+    final rutasConectadas = rutasCercaDeMi.intersection(rutasCercaDelDestino);
 
-      // 4. Mueve la cámara al destino
-      final controller = await _controller.future;
-      controller.animateCamera(CameraUpdate.newLatLngZoom(destino, 17));
-    }
+    setState(() {
+      _polylines = rutasConectadas;
+      _infoRutas = Map.fromEntries(
+        infoRutas.entries.where(
+          (e) => rutasConectadas.any((p) => p.polylineId.value == e.key),
+        ),
+      );
+    });
+
+    // 🎯 Mueve la cámara al destino
+    final controller = await _controller.future;
+    controller.animateCamera(CameraUpdate.newLatLngZoom(destino, 17));
+
+    RegistroDeActividad.registrarActividad(
+      'Buscó rutas conectadas desde su ubicación a $name',
+    );
   }
 
   @override
@@ -247,9 +329,12 @@ class _HomeBodyState extends State<HomeBody> {
       body: Stack(
         children: [
           GoogleMap(
-            onMapCreated: (controller) async {
+            onMapCreated: (GoogleMapController controller) async {
               controller.setMapStyle(mapStyle);
-              _controller.complete(controller);
+              if (!_controller.isCompleted) {
+                _controller.complete(controller);
+              }
+              _getLocationAndMoveCamera();
             },
             initialCameraPosition: _initialPosition,
             myLocationEnabled: true,
@@ -263,20 +348,7 @@ class _HomeBodyState extends State<HomeBody> {
                 locationData.latitude!,
                 locationData.longitude!,
               );
-
-              // Carga todas las rutas
-              final resultado = await cargarTodasLasRutasDesdeFirebaseYGoogle(
-                apiKey: widget.apiKey,
-              );
-              final Set<Polyline> todasLasPolylines =
-                  resultado['polylines'] as Set<Polyline>;
-              final Map<String, Map<String, dynamic>> infoRutas =
-                  resultado['infoRutas'] as Map<String, Map<String, dynamic>>;
-
-              // Filtra rutas cercanas al usuario
-              final Set<Polyline> rutasCercanas = todasLasPolylines.where((
-                poly,
-              ) {
+              final Set<Polyline> rutasCercanas = _todasLasRutas.where((poly) {
                 final puntos = poly.points;
                 return rutaEstaCercaDelUsuario(
                   puntos,
@@ -284,7 +356,6 @@ class _HomeBodyState extends State<HomeBody> {
                   radioMetros: 200,
                 );
               }).toSet();
-
               setState(() {
                 _selectedPlaceName = null;
                 _selectedLat = null;
@@ -292,7 +363,7 @@ class _HomeBodyState extends State<HomeBody> {
                 _markers.clear();
                 _polylines = rutasCercanas;
                 _infoRutas = Map.fromEntries(
-                  infoRutas.entries.where(
+                  _todaLaInfoRutas.entries.where(
                     (e) =>
                         rutasCercanas.any((p) => p.polylineId.value == e.key),
                   ),
@@ -304,7 +375,7 @@ class _HomeBodyState extends State<HomeBody> {
               _selectedLat != null &&
               _selectedLng != null)
             Positioned(
-              top: 300,
+              top: 350,
               left: 20,
               right: 20,
               child: Card(
@@ -315,11 +386,10 @@ class _HomeBodyState extends State<HomeBody> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 10,
+                    vertical: 12
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         _selectedPlaceName!,
@@ -328,9 +398,6 @@ class _HomeBodyState extends State<HomeBody> {
                           fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text('Latitud: ${_selectedLat!.toStringAsFixed(6)}'),
-                      Text('Longitud: ${_selectedLng!.toStringAsFixed(6)}'),
                     ],
                   ),
                 ),
@@ -365,6 +432,7 @@ class _HomeBodyState extends State<HomeBody> {
   @override
   void dispose() {
     _timer?.cancel();
+    _timerBuses?.cancel();
     super.dispose();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:busqalo/body.dart';
 import 'package:busqalo/login_page.dart';
 import 'package:busqalo/profile.dart';
+import 'package:busqalo/utils/registroDeActividad.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,12 +21,13 @@ class _HomePageState extends State<HomePage> {
   String? photoUrl;
   String? apellido;
   String? fechaNacimiento;
-  
+
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    RegistroDeActividad.registrarActividad('Accedió a la página de inicio');
   }
 
   String formatFecha(String fechaStr) {
@@ -39,8 +41,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    
-    
+
     if (user != null) {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -108,7 +109,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.green,
@@ -116,8 +116,6 @@ class _HomePageState extends State<HomePage> {
         statusBarBrightness: Brightness.dark,
       ),
     );
-
-    
 
     return Scaffold(
       drawer: ProfileDrawer(
@@ -205,7 +203,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-       ],
+        ],
       ),
     );
   }

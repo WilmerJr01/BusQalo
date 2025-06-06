@@ -1,3 +1,4 @@
+import 'package:busqalo/admin/live_emition.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin/car_admin.dart';
@@ -48,8 +49,8 @@ class RutaAdminPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 15,
+                  vertical: 11,
+                  horizontal: 20,
                 ),
               ),
               onPressed: () {
@@ -61,7 +62,7 @@ class RutaAdminPage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             ElevatedButton.icon(
               icon: const Icon(Icons.directions_bus),
               label: const Text('Administrar Buses'),
@@ -74,7 +75,7 @@ class RutaAdminPage extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(
                   vertical: 10,
-                  horizontal: 15,
+                  horizontal: 40,
                 ),
               ),
               onPressed: () {
@@ -86,12 +87,37 @@ class RutaAdminPage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             ElevatedButton.icon(
               icon: const Icon(Icons.route),
               label: const Text('Administrar Rutas'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromARGB(255, 197, 183, 58),
+                foregroundColor: Colors.white,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 40,
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminRoutesPage(),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: 5),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.signal_wifi_4_bar_rounded),
+              label: const Text('Emitir'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -106,7 +132,7 @@ class RutaAdminPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AdminRoutesPage(),
+                    builder: (context) => const LiveLocationPage(),
                   ),
                 );
               },

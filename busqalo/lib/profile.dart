@@ -1,4 +1,7 @@
+import 'package:busqalo/utils/registroDeActividad.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final String? nombre;
@@ -19,6 +22,94 @@ class ProfileDrawer extends StatelessWidget {
     required this.photoUrl,
     required this.onLogout,
   });
+
+  Future<void> enviarPQRS(BuildContext context) async {
+    final TextEditingController tipoController = TextEditingController();
+    final TextEditingController mensajeController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Enviar PQRS',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+          
+        ), 
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField(
+                decoration: const InputDecoration(labelText: 'Tipo'),
+                items: const [
+                  DropdownMenuItem(value: 'Petición', child: Text('Petición')),
+                  DropdownMenuItem(value: 'Queja', child: Text('Queja')),
+                  DropdownMenuItem(value: 'Reclamo', child: Text('Reclamo')),
+                  DropdownMenuItem(
+                    value: 'Sugerencia',
+                    child: Text('Sugerencia'),
+                  ),
+                ],
+                onChanged: (value) => tipoController.text = value ?? '',
+              ),
+              TextField(
+                controller: mensajeController,
+                decoration: InputDecoration(labelText: 'Mensaje', alignLabelWithHint: true),
+                maxLength: 500,
+                maxLines: 5,
+                keyboardType: TextInputType.multiline,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: () => Navigator.pop(context),
+            label: const Text('Cerrar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final tipo = tipoController.text.trim();
+              final mensaje = mensajeController.text.trim();
+
+              if (tipo.isEmpty || mensaje.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Por favor, completa todos los campos.'),
+                  ),
+                );
+                return;
+              }
+
+              final user = FirebaseAuth.instance.currentUser;
+
+              final pqrsRef = FirebaseFirestore.instance.collection('pqrs');
+              await pqrsRef.add({
+                'tipo': tipo,
+                'mensaje': mensaje,
+                'usuarioId': user?.uid,
+                'correo': user?.email,
+                'fecha': Timestamp.now(),
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('PQRS enviada exitosamente.')),
+              );
+
+              Navigator.pop(context);
+              RegistroDeActividad.registrarActividad(
+                'Envío de PQRS: $tipo',
+              );
+            },
+            label: const Text('Enviar'),
+            icon: const Icon(Icons.send_rounded),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,12 +181,41 @@ class ProfileDrawer extends StatelessWidget {
                   const SizedBox(height: 20),
                   Center(
                     child: ElevatedButton.icon(
+                      onPressed: () => enviarPQRS(context),
+                      icon: const Icon(
+                        Icons.edit_document,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      label: const Text('PQRS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: ElevatedButton.icon(
                       onPressed: onLogout,
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Cerrar sesión'),
+                      icon: const Icon(Icons.logout, size: 20, color: Colors.white),
+                      label: const Text('Cerrar sesión', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 15,
+                        ),
                       ),
                     ),
                   ),
