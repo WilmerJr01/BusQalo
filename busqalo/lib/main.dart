@@ -2,9 +2,9 @@ import 'package:busqalo/firebase_options.dart';
 import 'package:busqalo/wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'login_page.dart';
-import 'register_page.dart';
-import 'home_page.dart';
+import 'login/login_page.dart';
+import 'register/register_page.dart';
+import 'home/home_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 Future<void> main() async {

@@ -1,7 +1,7 @@
-import 'package:busqalo/utils/premium_page.dart';
-import 'package:busqalo/utils/recordatorios.dart';
-import 'package:busqalo/utils/rutas_favoritas.dart';
-import 'package:busqalo/utils/todas_las_rutas.dart';
+import 'package:busqalo/home/premium_page.dart';
+import 'package:busqalo/home/recordatorios.dart';
+import 'package:busqalo/home/rutas_favoritas.dart';
+import 'package:busqalo/home/todas_las_rutas.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

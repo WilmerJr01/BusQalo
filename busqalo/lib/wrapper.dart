@@ -1,11 +1,11 @@
-import 'package:busqalo/ruta_admin_page.dart';
+import 'package:busqalo/admin/ruta_admin_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'home_page.dart';
+import 'home/home_page.dart';
 
-import 'login_page.dart';
+import 'login/login_page.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});

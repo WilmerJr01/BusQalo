@@ -1,9 +1,9 @@
 import 'package:busqalo/admin/live_emition.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'admin/car_admin.dart';
-import 'admin/worker_admin.dart';
-import 'admin/routes_admin.dart';
+import 'car_admin.dart';
+import 'worker_admin.dart';
+import 'routes_admin.dart';
 
 class RutaAdminPage extends StatelessWidget {
   const RutaAdminPage({super.key});

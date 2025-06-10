@@ -1,6 +1,6 @@
-import 'package:busqalo/body.dart';
-import 'package:busqalo/login_page.dart';
-import 'package:busqalo/profile.dart';
+import 'package:busqalo/home/body.dart';
+import 'package:busqalo/login/login_page.dart';
+import 'package:busqalo/home/profile.dart';
 import 'package:busqalo/utils/registroDeActividad.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
