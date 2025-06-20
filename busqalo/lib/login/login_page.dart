@@ -24,9 +24,6 @@ class _LoginPageState extends State<LoginPage> {
       );
       return false;
     }
-
-    // Si tuvieses confirmPassword, aquí pondrías la validación de coincidencia
-
     return true;
   }
 
@@ -135,9 +132,8 @@ class _LoginPageState extends State<LoginPage> {
     final userCredential = await FirebaseAuth.instance.signInWithCredential(
       credential,
     );
-
+  
     if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-      // Usuario nuevo → mostrar formulario extra
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -145,8 +141,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
-
-    // Ya con eso, lo mandas a home o donde sea
     if (context.mounted) {
       Navigator.pushReplacementNamed(context, '/home');
     }
@@ -160,10 +154,7 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // Spacer flexible que empuja el contenido hacia abajo
               const Spacer(),
-
-              // Logo centrado verticalmente
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -174,11 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-
-              // Otro Spacer para empujar hacia arriba el bloque inferior
               const Spacer(),
-
-              // Inputs y botones en la parte inferior
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
