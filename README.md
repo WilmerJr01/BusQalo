@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="BusQalo Logo" width="200"/>
+</p>
+
 # BusQalo
 
 Aplicación móvil de Android para el seguimiento en tiempo real de rutas de transporte público en el área de Barranquilla, Colombia.
