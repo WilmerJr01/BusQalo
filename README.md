@@ -4,6 +4,15 @@
 
 # BusQalo
 
+![Flutter](https://img.shields.io/badge/Flutter-3.8.1-02569B?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.0.0-0175C2?logo=dart)
+![Firebase](https://img.shields.io/badge/Firebase-10.0.0-FFCA28?logo=firebase)
+![Google Maps](https://img.shields.io/badge/Google%20Maps-21.0.0-4285F4?logo=googlemaps)
+![Android](https://img.shields.io/badge/Android-6.0%20%28API%2023%29-3DDC84?logo=android)
+![Google Sign-In](https://img.shields.io/badge/Google%20Sign--In-0.0.0-4285F4?logo=google)
+![Google Places](https://img.shields.io/badge/Google%20Places-0.0.0-4285F4?logo=google)
+![Google Directions API](https://img.shields.io/badge/Google%20Directions%20API-0.0.0-4285F4?logo=google)
+
 Aplicación móvil de Android para el seguimiento en tiempo real de rutas de transporte público en el área de Barranquilla, Colombia.
 
 ## Descripción
