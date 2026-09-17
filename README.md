@@ -106,10 +106,10 @@ lib/
 ```
 ## Evidencias
 Así se ve la aplicación
-## Licencia
 <div align="center">
   <img src="evidenciaBusqalo1.jpg" alt="Evidencia 1" width="300"/>
   <img src="evidenciaBusqalo2.jpg" alt="Evidencia 2" width="300"/>
 </div>
 
+## Licencia
 Este proyecto fue desarrollado como proyecto final de bases de datos.
