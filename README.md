@@ -104,7 +104,9 @@ lib/
     ├── polilynes_routes.dart
     └── proximidad_rutas.dart
 ```
-
+## Evidencias
+Así se ve la aplicación
 ## Licencia
+
 
 Este proyecto fue desarrollado como proyecto final de bases de datos.
